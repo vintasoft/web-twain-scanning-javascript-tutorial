@@ -1,6 +1,6 @@
 # Vintasoft Web TWAIN Scanning Tutorial for JavaScript
 
-This HTML+JavaScript project uses <a href="https://www.vintasoft.com/vstwain-dotnet-index.html" target="_blank">VintaSoft TWAIN .NET SDK</a> and demonstrates how to work with TWAIN scanner on a Windows computer:
+This HTML+JavaScript project uses <a href="https://www.vintasoft.com/vstwain-dotnet-index.html" target="_blank">VintaSoft TWAIN .NET SDK</a> and demonstrates how to work with TWAIN scanners on a Windows computer:
 * Get the list of TWAIN devices
 * Select TWAIN device
 * Acquire images from TWAIN device
