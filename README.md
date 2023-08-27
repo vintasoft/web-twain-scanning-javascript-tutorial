@@ -17,8 +17,8 @@ If you want to use this ready-to-use project, please do the following steps:
    Vintasoft.Twain.WebTwainGlobalSettingsJS.register('REG_USER', 'REG_URL', 'REG_CODE', 'EXPIRATION_DATE');
    ```
 
-3. Upload HTML+JavaScript application to web server.
-Upload this application to a web server. This is obligatory step because VintaSoft Web TWAIN service does not work if HTML page is opened from file system, i.e. HTML page has URL "file:///somepath" and application is used as a desktop application.
+3. Upload HTML+JavaScript application to a web server.
+This is obligatory step because VintaSoft Web TWAIN service does not work if HTML page is opened from file system, i.e. HTML page has URL "file:///somepath" and application is used as a desktop application.
 
 4. Open HTML page in web browser and see the result.
 
