@@ -1,0 +1,174 @@
+﻿/**
+* Acquires images from TWAIN scanner.
+*/
+function getTwainDeviceList() {
+  __registerVintasoftWebTwainService();
+
+  var twainDeviceManager = __openTwainDeviceManager();
+  if (twainDeviceManager == null)
+    return;
+
+  var twainDeviceListSelectElement = document.getElementById('twainDeviceList');
+  // clear the device list
+  twainDeviceListSelectElement.options.length = 0;
+
+  var twainDevices;
+  var twainDevice;
+  try {
+    // get an array of available TWAIN devices
+    twainDevices = twainDeviceManager.get_Devices();
+
+    // get the default TWAIN device
+    twainDevice = twainDeviceManager.get_DefaultDevice();
+
+    // for each TWAIN device
+    for (var i = 0; i < twainDevices.length; i++) {
+        // add the device info to the device list
+        twainDeviceListSelectElement.options.length = twainDeviceListSelectElement.options.length + 1;
+        twainDeviceListSelectElement.options[i].text = twainDevices[i].get_DeviceName();
+        // if device is default device
+        if (twainDevices[i].get_DeviceName() === twainDevice.get_DeviceName())
+            // select device in device selection element
+            twainDeviceListSelectElement.options[i].selected = true;
+    }
+
+    if (twainDevices.length > 0) {
+      var acquireImagesFromTwainDeviceButton = document.getElementById("acquireImagesFromTwainDeviceButton");
+      acquireImagesFromTwainDeviceButton.disabled = false;
+    }
+  }
+  catch (ex) {
+    alert(ex);
+  }
+  finally {
+    // close the device manager
+    twainDeviceManager.close();
+  }
+}
+
+function acquireImagesFromTwainDevice() {
+  var acquireImagesFromTwainDeviceButton = document.getElementById("acquireImagesFromTwainDeviceButton");
+  acquireImagesFromTwainDeviceButton.disabled = true;
+
+  var twainDeviceListSelectElement = document.getElementById('twainDeviceList');
+  var twainDeviceIndex = twainDeviceListSelectElement.selectedIndex;
+  // if TWAIN device manager does not have TWAIN devices
+  if (twainDeviceIndex == -1) {
+    alert('TWAIN device manager does not have TWAIN devices.');
+    acquireImagesFromTwainDeviceButton.disabled = false;
+    return;
+  }
+
+  var twainDeviceName = twainDeviceListSelectElement.value;
+  if (twainDeviceName == null) {
+    alert('TWAIN device name is not found.');
+    acquireImagesFromTwainDeviceButton.disabled = false;
+    return;
+  }
+
+  __registerVintasoftWebTwainService();
+
+  var twainDeviceManager = __openTwainDeviceManager();
+  if (twainDeviceManager == null) {
+    alert('TWAIN device manager is not found.');
+    acquireImagesFromTwainDeviceButton.disabled = false;
+    return;
+  }
+
+  var twainDevices = null;
+  var twainDevice = null;
+  try {
+    // get an array of available TWAIN devices
+    twainDevices = twainDeviceManager.get_Devices();
+
+    // for each TWAIN device
+    for (var i = 0; i < twainDevices.length; i++) {
+        if (twainDevices[i].get_DeviceName() === twainDeviceName)
+            twainDevice = twainDevices[i];
+    }
+
+    if (twainDevice == null) {
+      alert('TWAIN device is not found.');
+      acquireImagesFromTwainDeviceButton.disabled = false;
+      return;
+    }
+
+    // open TWAIN device (do not display device UI but display dialog with image scanning progress)
+    twainDevice.open(false, true);
+
+    var acquireModalState;
+    do {
+      // do one step of modal image acquisition process
+      var acquireModalResult = twainDevice.acquireModalSync();
+      // get state of image acquisition
+      acquireModalState = acquireModalResult.get_AcquireModalState().valueOf();
+
+      switch (acquireModalState) {
+        case 2:   // image is acquired
+          // get acquired image
+          var acquiredImage = acquireModalResult.get_AcquiredImage();
+          // get image as Base64 string
+          var bitmapAsBase64String = acquiredImage.getAsBase64String();
+          // update image preview
+          var previewImageElement = document.getElementById('previewImage');
+          previewImageElement.src = bitmapAsBase64String;
+          break;
+        case 4:   // scan is failed
+          alert(acquireModalResult.get_ErrorMessage());
+          break;
+        case 9:   // scan is finished
+          break;
+      }
+    }
+    while (acquireModalState !== 0);
+  }
+  catch (ex) {
+    alert(ex);
+  }
+  finally {
+    acquireImagesFromTwainDeviceButton.disabled = false;
+    if (twainDevice != null) {
+      // close the device
+      twainDevice.close();
+    }
+    // close the device manager
+    twainDeviceManager.close();
+  }
+}
+
+function __registerVintasoftWebTwainService() {
+  // register the evaluation version of VintaSoft Web TWAIN service
+  // please read how to get evaluation license in documentation: https://www.vintasoft.com/docs/vstwain-dotnet-web/Licensing-Twain_Web-Evaluation.html
+  Vintasoft.Twain.WebTwainGlobalSettingsJS.register('REG_USER', 'REG_URL', 'REG_CODE', 'EXPIRATION_DATE');
+}
+
+function __openTwainDeviceManager() {
+  // URL to the VintaSoft Web TWAIN service
+  var serviceUrl;
+  if (window.location.protocol == 'http:')
+    serviceUrl = 'http://localhost:25319/api/VintasoftTwainApi';
+  else
+    serviceUrl = 'https://localhost:25329/api/VintasoftTwainApi';
+  // a Web API controller that allows to work with TWAIN devices
+  var twainService = new Vintasoft.Shared.WebServiceControllerJS(serviceUrl);
+
+  // TWAIN device manager
+  var twainDeviceManager = new Vintasoft.Twain.WebTwainDeviceManagerJS(twainService);
+
+  // the default settings of TWAIN device manager
+  var deviceManagerInitSetting = new Vintasoft.Twain.WebTwainDeviceManagerInitSettingsJS();
+
+  try {
+    // open TWAIN device manager
+    twainDeviceManager.open(deviceManagerInitSetting);
+  }
+  catch (ex) {
+    alert(ex);
+    return null;
+  }
+  return twainDeviceManager;
+}
+
+
+
+getTwainDeviceList();
